@@ -5,17 +5,7 @@ import sys
 import xml.etree.cElementTree as ET
 
 
-args=sys.argv
-
-input_file = args[2]
-
-f = open(input_file, 'r')
-content = f.read()
-content = content.split("\n")
-content = filter(None, content)
-
-
-def serialize_xml():
+def serialize_xml(content):
     # Start Building a Tree
     students = ET.Element("students")
 
@@ -39,6 +29,44 @@ def serialize_xml():
     tree.write("result.xml")
 
 
-serialize_xml()
-        
+def deserialize_xml(tree):
+    students = tree.getroot()
+    content = []
 
+    for student in students:
+        name = student[0].text
+        rollno = student[1].text
+        entry = name + ',' + rollno
+
+        courses = student[2:]
+
+        for course in courses:
+            entry += ':' + course.attrib['name'] + ',' + course.attrib['marks']
+
+        content.append(entry)
+        
+    content = '\n'.join(content)
+    f = open("output_xml.txt", "w+")
+    f.write(content)
+    f.close()
+
+
+def main():
+    args=sys.argv
+    input_file = args[2]
+
+
+    if args[1] == '-s':
+        f = open(input_file, 'r')
+        content = f.read()
+        content = content.split("\n")
+        content = filter(None, content)
+        serialize_xml(content)
+
+    elif args[1] == '-d':
+        tree = ET.parse(input_file)
+        deserialize_xml(tree)
+
+        
+if __name__ == '__main__':
+    main()
