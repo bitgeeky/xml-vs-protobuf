@@ -1,15 +1,20 @@
 #!/usr/bin/python
 
 import sys
+import time
 
 import xml.etree.cElementTree as ET
 
+
+record_count = 0
 
 def serialize_xml(content):
     # Start Building a Tree
     students = ET.Element("students")
 
     for entry in content:
+        global record_count
+        record_count += 1
         details = entry.split(':')
         details = filter(None, details)
         sname = (details[0].split(','))[0]
@@ -26,7 +31,7 @@ def serialize_xml(content):
             ET.SubElement(student, "course", name=cname, marks=cmarks)
 
     tree = ET.ElementTree(students)
-    tree.write("result.xml")
+    return tree
 
 
 def deserialize_xml(tree):
@@ -46,9 +51,7 @@ def deserialize_xml(tree):
         content.append(entry)
         
     content = '\n'.join(content)
-    f = open("output_xml.txt", "w+")
-    f.write(content)
-    f.close()
+    return content
 
 
 def main():
@@ -59,14 +62,44 @@ def main():
     if args[1] == '-s':
         f = open(input_file, 'r')
         content = f.read()
+        f.close()
         content = content.split("\n")
         content = filter(None, content)
-        serialize_xml(content)
+        tree = serialize_xml(content)
+        tree.write("result.xml")
 
     elif args[1] == '-d':
         tree = ET.parse(input_file)
-        deserialize_xml(tree)
+        content = deserialize_xml(tree)
+        f = open("output_xml.txt", "w+")
+        f.write(content)
+        f.close()
 
+    elif args[1] == '-t':
+        global record_count
+        record_count = 0
+
+        start_time = time.time()
+
+        text_file = args[2]
+        f = open(text_file, 'r')
+        content = f.read()
+        data_size = sys.getsizeof(content)
+        f.close()
+        content = content.split("\n")
+        content = filter(None, content)
+        tree = serialize_xml(content)
+
+        xml_file = args[3]
+        tree = ET.parse(xml_file)
+        content = deserialize_xml(tree)
         
+        total_time = time.time() - start_time
+        
+        print "Average Record Size: " + str(data_size/record_count) + "bytes"
+        print "Total time for serialization and deserialization: " + str(total_time * 1000) + " ms"
+        print "Rate of serialization/deserialization: " + str((data_size * 1000)/ (total_time * 1024 * 1024)) + " Mbps"
+
+
 if __name__ == '__main__':
     main()
